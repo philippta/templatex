@@ -1,0 +1,8 @@
+{{define "payments"}}
+<h2>The following payment methods are available</h2>
+{{range .PaymentMethods}}
+<div class="method">
+    {{template "method" .}}
+</div>
+{{end}}
+{{end}}

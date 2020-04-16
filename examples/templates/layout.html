@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+
+<head>
+    <title>templatex Demo</title>
+</head>
+
+<body>
+    {{template "header" .}}
+
+    <div class="content">
+        {{block "content" .}}
+        fallback: content
+        {{end}}
+    </div>
+
+    {{template "footer" .}}
+</body>
