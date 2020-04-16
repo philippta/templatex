@@ -63,6 +63,73 @@ t := &templatex.Template{
 }
 ```
 
+## Parsing order
+
+Based on the example from above:
+```
+templates/
+  layout.html
+
+  includes/
+    header.html
+    footer.html
+
+  dashboard/
+    includes/
+      widgets.html
+    view.html
+    edit.html
+
+  profile/
+    view.html
+    edit.html
+
+    payments/
+      methods.html
+      add.html
+```
+
+templatex will parse the templates in the following order:
+```
+dashboard/view:
+  templates/includes/header.html
+  templates/includes/footer.html
+  templates/dashboard/includes/widgets.html
+  templates/layout.html
+  templates/dashboard/view.html
+
+dashboard/edit:
+  templates/includes/header.html
+  templates/includes/footer.html
+  templates/dashboard/includes/widgets.html
+  templates/layout.html
+  templates/dashboard/edit.html
+
+profile/view:
+  templates/includes/header.html
+  templates/includes/footer.html
+  templates/layout.html
+  templates/profile/view.html
+
+profile/edit:
+  templates/includes/header.html
+  templates/includes/footer.html
+  templates/layout.html
+  templates/profile/edit.html
+
+profile/payments/methods:
+  templates/includes/header.html
+  templates/includes/footer.html
+  templates/layout.html
+  templates/profile/payments/methods.html
+
+profile/payments/add:
+  templates/includes/header.html
+  templates/includes/footer.html
+  templates/layout.html
+  templates/profile/payments/add.html
+```
+
 ## Defining nested templates
 
 Defining nested templates in Go is relatively simple. There are just three instructions you should keep in mind:
