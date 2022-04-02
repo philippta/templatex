@@ -1,11 +1,11 @@
 package templatex_test
 
 import (
-	"embed"
 	"strings"
 	"testing"
 
 	"github.com/philippta/templatex"
+	"github.com/philippta/templatex/test/templates"
 )
 
 func TestExecuteTemplate(t *testing.T) {
@@ -53,13 +53,10 @@ func TestExecuteTemplate(t *testing.T) {
 	}
 }
 
-//go:embed test/templates
-var testFS embed.FS
-
 func TestExecuteTemplateFS(t *testing.T) {
 	tmpl := templatex.New()
 
-	if err := tmpl.ParseFS(testFS, "test/templates"); err != nil {
+	if err := tmpl.ParseFS(templates.FS, "."); err != nil {
 		t.Errorf("error executing template: %v", err)
 	}
 

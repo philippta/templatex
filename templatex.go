@@ -190,7 +190,7 @@ func findTemplates(files fs.FS, dir, includeDir, layout string) ([]templateInfo,
 		}
 
 		// Determine if the template is a base/layout template or normal template
-		if strings.HasSuffix(path, string(filepath.Separator)+layout) {
+		if strings.HasSuffix(path, string(filepath.Separator)+layout) || path == layout {
 			layouts = append(layouts, path)
 		} else {
 			templates = append(templates, path)
@@ -220,14 +220,14 @@ func findTemplates(files fs.FS, dir, includeDir, layout string) ([]templateInfo,
 
 		// Add all include directories which lie in the same directory hirachy
 		for _, i := range includeDirs {
-			if strings.HasPrefix(t, filepath.Dir(i)) {
+			if strings.HasPrefix(t, filepath.Dir(i)) || filepath.Dir(i) == "." {
 				includes = append(includes, i)
 			}
 		}
 
 		// Add all base/layout templates which lie in the same directory hirachy
 		for _, l := range layouts {
-			if strings.HasPrefix(t, filepath.Dir(l)) {
+			if strings.HasPrefix(t, filepath.Dir(l)) || filepath.Dir(l) == "." {
 				files = append(files, l)
 			}
 		}
