@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"html/template"
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"sort"
@@ -85,7 +86,13 @@ type Template struct {
 
 // ParseDir parses all templates inside a given directory
 func (t *Template) ParseDir(dir string) (err error) {
-	t.templates, err = parseDir(dir, t.IncludeDir, t.Layout, t.FuncMap)
+	t.templates, err = parseFS(os.DirFS("."), dir, t.IncludeDir, t.Layout, t.FuncMap)
+	return
+}
+
+// ParseFS parses all templates inside a given fs.FS
+func (t *Template) ParseFS(files fs.FS, dir string) (err error) {
+	t.templates, err = parseFS(files, dir, t.IncludeDir, t.Layout, t.FuncMap)
 	return
 }
 
@@ -102,11 +109,11 @@ func (t *Template) ExecuteTemplate(w io.Writer, name string, data interface{}) e
 }
 
 // parseDir builds templates inside a given directory
-func parseDir(dir, includeDir, layout string, funcMap template.FuncMap) (map[string]*template.Template, error) {
+func parseFS(files fs.FS, dir, includeDir, layout string, funcMap template.FuncMap) (map[string]*template.Template, error) {
 	templates := map[string]*template.Template{}
 
 	// Collect template parsing information of the given directory
-	templateInfos, err := findTemplates(dir, includeDir, layout)
+	templateInfos, err := findTemplates(files, dir, includeDir, layout)
 	if err != nil {
 		return nil, err
 	}
@@ -119,14 +126,18 @@ func parseDir(dir, includeDir, layout string, funcMap template.FuncMap) (map[str
 
 		// Use ParseGlob to parse all partial templates from the include directories
 		for _, f := range info.includes {
-			t, err = t.ParseGlob(f + string(filepath.Separator) + "*")
+			gf, err := fs.Glob(files, f+string(filepath.Separator)+"*")
+			if err != nil {
+				return nil, ParseError{Path: f + string(filepath.Separator) + "*", Err: err}
+			}
+			t, err = t.ParseFS(files, gf...)
 			if err != nil {
 				return nil, ParseError{Path: f + string(filepath.Separator) + "*", Err: err}
 			}
 		}
 
 		// Parse the rest of the templates
-		t, err = t.ParseFiles(info.files...)
+		t, err = t.ParseFS(files, info.files...)
 		if err != nil {
 			return nil, ParseError{Path: fmt.Sprintf("%v", info.files), Err: err}
 		}
@@ -149,7 +160,7 @@ type templateInfo struct {
 
 // fileTemplates returns a list of all executable templates
 // with their respective layout dependencies and include templates
-func findTemplates(dir, includeDir, layout string) ([]templateInfo, error) {
+func findTemplates(files fs.FS, dir, includeDir, layout string) ([]templateInfo, error) {
 	// Cleans trailing slashs from directories
 	dir = filepath.Clean(dir)
 	includeDir = filepath.Clean(includeDir)
@@ -160,7 +171,7 @@ func findTemplates(dir, includeDir, layout string) ([]templateInfo, error) {
 	templates := []string{}
 
 	// walkfn finds all files and directories inside of dir
-	walkfn := func(path string, info os.FileInfo, err error) error {
+	walkfn := func(path string, info fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
@@ -187,7 +198,7 @@ func findTemplates(dir, includeDir, layout string) ([]templateInfo, error) {
 
 		return nil
 	}
-	if err := filepath.Walk(dir, walkfn); err != nil {
+	if err := fs.WalkDir(files, dir, walkfn); err != nil {
 		return nil, ParseError{Path: dir, Err: err}
 	}
 
